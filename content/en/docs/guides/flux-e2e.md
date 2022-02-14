@@ -91,13 +91,15 @@ For more information, see: [`flux create`](https://fluxcd.io/docs/cmd/flux_creat
 
 Some resource options are not available through generators and can only be accessed through fields in YAML, (users are generally expected to write resources in YAML and commit them, and should do so when they require access to those features.) Flux's OpenAPI specification can also assist users in producing valid YAML for creating resources in Flux APIs.
 
-### 2. `flux diff kustomization`
+### 2. `flux diff kustomization` / `flux build kustomization`
 
-Users have an opportunity to inspect the change of a repository from the Flux CLI, ahead of where Flux actually applies it to the cluster. This new feature landed in Flux 0.26.
+Users have an opportunity to inspect the change of a repository from the Flux CLI, ahead of where Flux actually applies it to the cluster.
 
 Run `flux diff kustomization --path=./clusters/my-cluster flux-system` from the bootstrap repo, or point it at any other Flux Kustomization and the matching path in your configuration repository to observe what changes Flux will apply, even before they are committed and pushed. This takes account of the cluster state and so it can also be used at any time to check for drift on the cluster that Flux would revert back to the state in Git as soon as the Kustomization is reconciled, or at its next interval.
 
 Any diff containing secret data is obscured so that no secret data is accidentally divulged from the diff output.
+
+TODO: add mention of `flux build`
 
 ### 3. `ImageRepository` and `ImageUpdateAutomation` with `ImagePolicy`
 
