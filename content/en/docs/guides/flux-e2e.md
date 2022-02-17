@@ -7,13 +7,13 @@ weight: 75
 
 Below we describe the life of a commit as it is seen from all angles by a Flux user.
 
-Assuming a standard Flux installation, with all optional features enabled, we then explain how Flux users can expect their changes to flow through the system as a commit, and interfaces as they pass through the system and the cluster, chronologically, at every step. We cover every supported opportunity that users have to inspect and interact with their changes through Flux, with a focus on the commit, and special attention to show the role of each component of the [GitOps toolkit](https://fluxcd.io/docs/components/).
+Assuming a standard Flux installation, with all optional features enabled, we then explain how Flux users can expect their changes to flow through the system as a commit, and describe how the data passes through the system and the cluster, in rough chronological order. We cover every supported opportunity that users have to inspect and interact with their changes through Flux, with a focus on the commit, and special attention to show the role of each component of the [GitOps toolkit][].
 
 It should be clear from reading this document when any Flux component interacts with the cluster resources or APIs, or any commit or registry data. This document narrates through those interactions so that there can be an end-to-end analysis of how Flux works that includes mention of any authentication or security hardening procedures that are in play for Flux at runtime.
 
 Security and hardening procedures that the Flux development team may be taking to guarantee Flux release-engineering standards for testing, runtime safety, and release quality are considered outside of the scope of this document.
 
-See one of: [Security](https://fluxcd.io/docs/security/), [Contributing: Acceptance Policy](https://fluxcd.io/docs/contributing/flux/#acceptance-policy) for more information about those standards and practices. An exhaustive description of the precautions with regard to sensitive and/or secret data and flow of information related to sensitive access, is out of the scope of this document.
+See one of: [Security][], [Contributing: Acceptance Policy][] for more information about those standards and practices. An exhaustive description of the precautions with regard to sensitive and/or secret data and flow of information related to sensitive access, is out of the scope of this document.
 
 ## Terminology
 
@@ -52,20 +52,23 @@ Helm Controller (and its predecessor, Helm Operator) stand alone in the GitOps w
 Examples of some Helm Controller features that directly leverage upstream features of Helm today include [Helm Chart Hooks][], Helm Release Lifecycle events and the optional health checking that's performed by `helm --wait` to determine if a release is successful, Helm tests, rollbacks and uninstalls, and an implementation of Helm's [Post Rendering][] feature that allows safety and security while using the Kustomize post-renderer in Flux Continuous Delivery pipelines (that is, without requiring untrusted execution of any external scripts or binaries.)
 
 **Notification Controller**
-The Notification Controller is a Kubernetes operator, specialized in handling inbound and outbound events. The controller handles:
-events coming from external systems (GitHub, GitLab, Bitbucket, Harbor, Jenkins, etc) and notifies the GitOps toolkit controllers about source changes.
-events emitted by the GitOps toolkit controllers (source, kustomize, helm) and dispatches them to external systems (Slack, Microsoft Teams, Discord, RocketChat) based on event severity and involved objects.
 
+The [Notification Controller][] is a Kubernetes operator, specialized in handling inbound and outbound events. The controller handles:
 
- Links/resources:
-Notification Controller: https://fluxcd.io/docs/components/notification/
-
+* events coming from external systems (GitHub, GitLab, Bitbucket, Harbor, Jenkins, etc) and notifies the GitOps toolkit controllers about source changes.
+* events emitted by the GitOps toolkit controllers (source, kustomize, helm) and dispatches them to external systems (Slack, Microsoft Teams, Discord, RocketChat) based on event severity and involved objects.
 
 **Image Automation Controller**
-The Image Automation Controller automates updates to YAML files based on the latest images scanned by the Image Reflector Controller, and commits the changes to a given Git repository. The behavior of the automation process is defined by a Custom Resource named `ImageUpdateAutomation`. The updates are governed by marking fields to be updated in each YAML file. For each field marked, the automation process checks the image policy named, and updates the field value if there is a new image selected by the policy. The marker format is shown in the [image automation guide](https://fluxcd.io/docs/guides/image-update/#configure-image-update-for-custom-resources). With `ImageUpdateAutomation`, the Git commit branch and message can be customized.
+
+The Image Automation Controller automates updates to YAML files based on the latest images scanned by the Image Reflector Controller, and commits the changes to a given Git repository. The behavior of the automation process is defined by a Custom Resource named `ImageUpdateAutomation`.
+
+The updates are governed by marking fields to be updated in each YAML file. For each field marked, the automation process checks the image policy named, and updates the field value if there is a new image selected by the policy. The marker format is shown in the [image automation guide][]. With `ImageUpdateAutomation`, the Git commit branch and message can be customized.
 
 **Image Reflector Controller**
-The Image Reflector Controller scans image repositories and reflects the image metadata in Kubernetes resources. Based on a defined `ImageRepository`, the controller follows `ImagePolicy` rules defined for selecting a "latest" image from the repository. This can be used to drive automation, as with the Image Automation Controller; or more generally, to inform other processes of the state of an image repository. With `ImageRepository`, the users can specify how to scan an OCI image repository, such as repository authentication, and TLS certificate to use. The `ImagePolicy` can be defined to use SemVer, alphabetically, or numerically to select the "latest" image. Image tags can also be filtered before they are considered by the policy rule.
+
+The Image Reflector Controller scans image repositories and reflects the image metadata in Kubernetes resources. Based on a defined `ImageRepository`, the controller follows `ImagePolicy` rules defined for selecting a "latest" image from the repository. This can be used to drive automation, as with the Image Automation Controller; or more generally, to inform other processes of the state of an image repository.
+
+With `ImageRepository`, the users can specify how to scan an OCI image repository, such as repository authentication, and TLS certificate to use. The `ImagePolicy` can be defined to use SemVer, alphabetically, or numerically to select the "latest" image. Image tags can also be filtered before they are considered by the policy rule.
 
 ## Config repo and the Flux CLI
 
@@ -159,21 +162,20 @@ The period of waiting for the reconciliation interval can be increased or reduce
 
 One of the measures generally considered important is how long it takes for developers to get feedback from CI/CD systems. It's commonly put forth that "the CI feedback loop should not take longer than 10 minutes." It should be clear from those relevant materials that for tasks we do many times every day, seconds add up to minutes quickly. For this reason it is recommended to use Receivers wherever possible, or at least whenever shortening the feedback loop is to be considered as an important goal.
 
-
 ### 6. `GitRepository` Source (Artifacts and Revisions)
 
 A `GitRepository` is a Custom Resource that saves a read-only view of the latest revision of a Git repository and hosts it as a service in the cluster.
 
-The [GitRepository Custom Resource](https://fluxcd.io/docs/components/source/gitrepositories/) describes a (usually remote) Git repository, including the URL of the repository host, and the Git reference (such as a branch name or tag) to monitor for changes. Additionally you may find a secret reference with SSH or TLS keys to verify that host, a secret reference containing authentication credentials, a secret reference containing keys for verifying commit signatures, a configurable polling interval, and other meta information related to the source repository.
+The [GitRepository Custom Resource][] describes a (usually remote) Git repository, including the URL of the repository host, and the Git reference (such as a branch name or tag) to monitor for changes. Additionally you may find a secret reference with SSH or TLS keys to verify that host, a secret reference containing authentication credentials, a secret reference containing keys for verifying commit signatures, a configurable polling interval, and other meta information related to the source repository.
 
 The Source Controller treats its connection to each Git repository as read-only, even if the authentication credentials supplied would enable writes to the repository. (Other components, such as the Image Update Automation Controller, may use the Git repository for its access and can write to the repository.)
 
 The Source Controller connects to the repository host, pulls the latest commit for the specified reference, and stores the contents in a bundled and compressed format (currently a gzipped tarball file).
 
 The Source Controller also supports:
-* the [BucketSpec Custom Resource](https://fluxcd.io/docs/components/source/buckets/) for reading the contents of an Amazon S3, Google Cloud Storage and other similar block-storage services;
-* the [HelmRepository Custom Resource](https://fluxcd.io/docs/components/source/helmrepositories/) for reading the index of a Helm chart repository, and
-* the [HelmChart Custom Resource](https://fluxcd.io/docs/components/source/helmcharts/) for reading a Helm chart artifact from a HelmRepository source.
+* the [BucketSpec Custom Resource][] for reading the contents of an Amazon S3, Google Cloud Storage and other similar block-storage services;
+* the [HelmRepository Custom Resource][] for reading the index of a Helm chart repository, and
+* the [HelmChart Custom Resource][] for reading a Helm chart artifact from a HelmRepository source.
 
 Note that it does not make any difference to the Source Controller whether a source is hosted within the cluster or on an external service or server. The Source Controller will still attempt to verify the host using the SSH or TLS keys supplied in the GitRepository Custom Resource and will store its contents as a read-only tarball.
 
@@ -190,7 +192,7 @@ Features include:
 
 ### 7. Kustomize Controller (Secret Decryption via SOPS)
 
-The [Kustomize Controller will decrypt Secret values encrypted using Mozilla's SOPS CLI](https://fluxcd.io/docs/guides/mozilla-sops/)
+The [Kustomize Controller will decrypt Secret values encrypted using Mozilla's SOPS CLI][Mozilla SOPS Guide]
 with OpenPGP, AWS KMS, GCP KMS or Azure Key Vault and stored in the source Git repository as Kubernetes Secret manifests.
 The encrypted secret can be safely stored in a public or private Git repository.
 
@@ -209,20 +211,20 @@ returns any custom resource definitions (CRDs), namespaces, or other cluster-wid
 subordinate custom resources or namespace-scoped resources so that they will be available in the API for the resources
 that refer to or use them.
 
-* FAQ: [How does Flux run `kustomize build` internally?](https://fluxcd.io/docs/faq/#what-is-the-behavior-of-kustomize-used-by-flux) (Replicate Kustomize behavior locally with the Kustomize CLI)
+* FAQ: [How does Flux run `kustomize build` internally?][Kustomize Build Flags] (Replicate Kustomize behavior locally with the Kustomize CLI)
 
 ### 8. Kustomize Controller (Server Side Apply)
 
 **Needs a link to FluxCD documentation for Server-Side Apply process!** _The only current on-point reference is the [Server-side reconciliation is coming](https://fluxcd.io/blog/2021/09/server-side-reconciliation-is-coming/) blog post.  This would likely be considered a gap in FluxCD project docs._
 
 The Kustomize Controller communicates directly with the Kubernetes API using
-[server-side apply and update](https://kubernetes.io/docs/reference/using-api/server-side-apply/) API operations
+[server-side apply and update][] API operations
 instead of running the `kubectl apply` command as a separate forked process and passing it manifest data through
 a system pipe. Applying resource manifests directly
 to the Kubernetes API is both more efficient and provides more control over the process, enabling the Kustomize
 Controller to give real-time feedback on validation errors, garbage-collection and resource health assessment.
 It also allows the Kubernetes API to track
-[field management](https://kubernetes.io/docs/reference/using-api/server-side-apply/#field-management),
+[field management][],
 so different management tools or controllers can set field values within the same resource without interfering
 with each other.
 
@@ -238,17 +240,17 @@ custom resource or namespace-scoped resources to that they will be available in 
 ### 9. Helm Controller (`HelmRelease` Custom Resource)
 (Adjacent concept to Kustomize apply)
 
-A [HelmRelease](https://fluxcd.io/docs/components/helm/api/) is a composition of a chart, the chart values (parameters to the chart), and any inputs like secrets or config maps that are used to compose the values. Declaring a HelmRelease will cause the Helm Controller to perform an install using the Helm client libraries. Any changes made to the HelmRelease will trigger the Helm Controller to perform an upgrade to actuate those changes. You can find more information about HelmReleases [here](https://fluxcd.io/docs/guides/helmreleases/) and more general info about Helm for Flux users [here](https://fluxcd.io/docs/use-cases/helm/).
+A [HelmRelease][HelmRelease API] is a composition of a chart, the chart values (parameters to the chart), and any inputs like secrets or config maps that are used to compose the values. Declaring a HelmRelease will cause the Helm Controller to perform an install using the Helm client libraries. Any changes made to the HelmRelease will trigger the Helm Controller to perform an upgrade to actuate those changes. You can find more information about HelmReleases [here][HelmRelease Guide] and more general info about Helm for Flux users [here][Helm Use Case].
 
 
 ### 10. HelmRepository and HelmChart (Sources for Helm)
 
-A Helm Repository is the native and preferred source for Helm. The Helm Controller works in tandem with the Source Controller to provide a [HelmRepository API](https://fluxcd.io/docs/components/source/helmrepositories/) that collects the correct release version from the helm repo and republishes its data as a [HelmChart](https://fluxcd.io/docs/components/source/helmcharts/) artifact (another .tar.gz).
+A Helm Repository is the native and preferred source for Helm. The Helm Controller works in tandem with the Source Controller to provide a [HelmRepository API][] that collects the correct release version from the helm repo and republishes its data as a [HelmChart][HelmChart API] artifact (another .tar.gz).
 
 The helm repo itself is represented internally in the Source Controller as a YAML index of all releases, including any charts in the repository.
 
-
 ### 11. GitRepository and HelmChart (Alternative Sources for Helm)
+
 GR can be used as a source for Helm Release. The Git repo is not a native storage format for helm and there are some idiosyncrasies when you’re using Helm Controller with a Git repository source. You can use a GitRepository as a source, but best practice is to limit it to 1:1 (don’t do mono repo) - bad idea to create a repo with 400 helm charts. The problem is that git repo sources are tgz files end up with lots of artifacts pulled each time (overloading). Orange juice analogy here?
 
 So you have lots of tools at your disposal for making sources narrowly scoped, and if you will use them all, you can avoid any potential issues stemming from Helm Controller accidentally pulling in resources and causing source controller to repackage them again, when you did not need to include them in the chart.
@@ -258,36 +260,48 @@ Whatever it says it just needs to get the message across that the Source is real
 It's probably important to get across also that whatever winds up in the Helm Chart .tgz will actually be loaded into memory by Helm, and it has no way to know which files are not important. So while you can get away with reusing one GitRepository up to a point, you really need to know for sure that what goes into the HelmChart is not littered with unnecessary files more than what's needed.
 
 Links/resources:
+
 TODO: this all belongs in one of the Helm guides
 
 ### 12. Notifications Part 1 - Notification Providers
 
-Notification Providers are used by Flux for outbound notifications to platforms like Slack, Microsoft Teams, Discord and others. The Notification Provider manifest must contain an identifier to connect to the receiver platforms, usually `spec.address`, and an authorization token which should be stored in a secret that we will reference in the notification Provider as `spec.secretRef.name`.
+Notification Providers are used by Flux for [outbound notifications][Setup Notifications] to platforms like Slack, Microsoft
+Teams, Discord and others.  The Notification Provider manifest must contain an identifier to connect to the receiver platforms,
+usually `spec.address`, and an authorization token which should be stored in a secret that we will reference in the notification
+Provider as `spec.secretRef.name`.
 
-They are driven by `Alerts`, another CRD in the Flux Notification Controller's API. `Alerts` create notifications from events, and all of the flux reconcilers generate events while they are undergoing status transitions. The `Alerts` are used to filter the events generated by flux reconcilers using `spec.eventSources` and the `spec.eventSeverity` and then they are forward to a Provider specified on `spec.providerRef`.
+They are driven by [`Alerts`][Alert API], another CRD in the Flux Notification Controller's API. `Alerts` create notifications from events,
+and all of the flux reconcilers generate events while they are undergoing status transitions. The `Alerts` are used to filter
+the events generated by flux reconcilers using `spec.eventSources` and the `spec.eventSeverity` and then they are forward to a
+Provider specified on `spec.providerRef`.
 
-To avoid duplicated alerts `Events` are rate limited based on the `InvolvedObject.Name`, `InvolvedObject.Namespace`, `InvolvedObject.Kind`, `Message`, and `Metadata.revision`. The interval of the rate limit is set by default to 5m but it's configurable.
-
-Links/resources:
-Setup Notifications: https://fluxcd.io/docs/guides/notifications/
-Alert: https://fluxcd.io/docs/components/notification/alert/
-Event? https://fluxcd.io/docs/components/notification/event/
+To avoid duplicated alerts [`Events`][Event API] are rate limited based on the `InvolvedObject.Name`, `InvolvedObject.Namespace`,
+`InvolvedObject.Kind`, `Message`, and `Metadata.revision`. The interval of the rate limit is set by default to 5m but it's configurable.
 
 ### 13. Notifications Part 2 - Git Commit Status Providers
 
-Git Commit Status Providers work similarly to other notification providers however they target a specific commit with their event. If you [set up git commit status notications](https://fluxcd.io/docs/guides/notifications/#git-commit-status) through an integration for GitHub, GitLab, Bitbucket (or any supported git providers) Flux will display success or failure reported on each commit from any alerts targeting the provider. This feature is restricted to `Kustomization` as an event source since the Git Commit Status Providers require a commit hash present in the metadata.
+Git Commit Status Providers work similarly to other notification providers however they target a specific commit with their event.
+If you [set up git commit status notications][Setup Git Commit Status Notications] through an integration for GitHub, GitLab,
+Bitbucket (or any supported git providers) Flux will display success or failure reported on each commit from any alerts targeting
+the provider. This feature is restricted to `Kustomization` as an event source since the Git Commit Status Providers require a
+commit hash present in the metadata.
 
-The provider will continuously receive events as they happen, and multiple events may be received for the same commit hash. The git providers are configured to update the status only if it has changed. This avoids repeatedly spamming the commit status history.
+The provider will continuously receive events as they happen, and multiple events may be received for the same commit hash. The git
+providers are configured to update the status only if it has changed. This avoids repeatedly spamming the commit status history.
 
 ### 14. Kustomize Controller (Health Checks and Wait)
-Kustomize Controller can be configured with or without spec.wait which decides whether the Kustomization will be considered ready as soon as the resources are applied, or if the Kustomization will not be considered ready until the resources it created are all marked as ready.
 
-Links/resources:
-Health Assessment: https://fluxcd.io/docs/components/kustomize/kustomization/#health-assessment
+Kustomize Controller can be configured with or without spec.wait which decides whether the Kustomization will be considered ready
+as soon as the resources are applied, or if the Kustomization will not be considered ready until the resources it created are all
+marked as ready.
+
+The health checking feature is called [Health Assessment][] in the Flux Kustomization API.
 
 ### 15. ...
 
-
+[GitOps toolkit]: https://fluxcd.io/docs/components/
+[Security]: https://fluxcd.io/docs/security/
+[Contributing: Acceptance Policy]: https://fluxcd.io/docs/contributing/flux/#acceptance-policy
 [Source controller]: https://fluxcd.io/docs/components/source/
 [Kustomize controller]: https://fluxcd.io/docs/components/kustomize/
 [Helm controller]: https://fluxcd.io/docs/components/helm/
@@ -295,4 +309,22 @@ Health Assessment: https://fluxcd.io/docs/components/kustomize/kustomization/#he
 [Image reflector and automation controllers]: https://fluxcd.io/docs/components/image/
 [Helm Chart Hooks]: https://helm.sh/docs/topics/charts_hooks/
 [Post Rendering]: https://helm.sh/docs/topics/advanced/#post-rendering
-[MORE]
+[image automation guide]: https://fluxcd.io/docs/guides/image-update/#configure-image-update-for-custom-resources
+[GitRepository Custom Resource]: https://fluxcd.io/docs/components/source/gitrepositories/
+[BucketSpec Custom Resource]: https://fluxcd.io/docs/components/source/buckets/
+[HelmRepository Custom Resource]: https://fluxcd.io/docs/components/source/helmrepositories/
+[HelmChart Custom Resource]: https://fluxcd.io/docs/components/source/helmcharts/
+[Mozilla SOPS Guide]: https://fluxcd.io/docs/guides/mozilla-sops/
+[Kustomize Build Flags]: https://fluxcd.io/docs/faq/#what-is-the-behavior-of-kustomize-used-by-flux
+[server-side apply and update]: https://kubernetes.io/docs/reference/using-api/server-side-apply/
+[field management]: https://kubernetes.io/docs/reference/using-api/server-side-apply/#field-management
+[HelmRelease API]: https://fluxcd.io/docs/components/helm/api/
+[HelmRelease Guide]: https://fluxcd.io/docs/guides/helmreleases/
+[Helm Use Case]: https://fluxcd.io/docs/use-cases/helm/
+[HelmRepository API]: https://fluxcd.io/docs/components/source/helmrepositories/
+[HelmChart API]: https://fluxcd.io/docs/components/source/helmcharts/
+[Setup Notifications]: https://fluxcd.io/docs/guides/notifications/
+[Alert API]: https://fluxcd.io/docs/components/notification/alert/
+[Event API]: https://fluxcd.io/docs/components/notification/event/
+[Setup Git Commit Status Notications]: https://fluxcd.io/docs/guides/notifications/#git-commit-status
+[Health Assessment]: https://fluxcd.io/docs/components/kustomize/kustomization/#health-assessment
