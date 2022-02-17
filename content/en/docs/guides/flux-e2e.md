@@ -88,7 +88,7 @@ A brief outline of the life cycle of a change as it's processed through Flux, ce
 2. The user can preview any changes to the cluster before or after making a commit with `flux diff kustomization`.
 3. Image Update Automation resources are a way for Flux to generate commits when there are updated images available.
 4. A git commit is represented internally as an "Artifact" in Flux, and it makes a footprint on the cluster through Source Controller.
-5. The Flux namespace is protected by a set of NetworkPolicy resources that prohibit noisy neighbors from reaching most Flux Services.
+5. The Flux namespace is protected by a set of `NetworkPolicy` resources that prohibit noisy neighbors from reaching most Flux Services.
 6. The "git push" event fires a webhook that Flux can receive, which triggers the `GitRepository` to reconcile (or the waiting period of the `GitRepository.spec.interval` passes, which similarly triggers the `GitRepository` to reconcile.
 7. The Source controller fetches the GitRepository data from the backing resource (Git, S3, ...).
 8. If an optional decryption configuration is provided with the Flux Kustomization, any encrypted secret manifests that are stored in the Kustomization's path are decrypted.
@@ -146,6 +146,8 @@ Arbitrary clients cannot connect to any service in the `flux-system` namespace, 
 2. `allow-webhooks` permits clients from any namespace to reach the Flux notification controller on any port, for the purpose of sending notifications via webhook when events are emitted from sources that the Notification Controller can be subscribed to.
 
 3. `allow-egress` permits agents in the `flux-system` namespace to send traffic outside of the namespace, (for the purpose of reaching any remote `GitRepository`, `HelmRepository`, `ImageRepository`, or `Provider`), and denies ingress for any traffic from pods or other clients outside of `flux-system` to prevent any traffic directed into the namespace.
+
+TODO: Add a reference to the install docs, (where this information should live permanently.)
 
 ### 6. `git push` - Webhook Receivers
 
