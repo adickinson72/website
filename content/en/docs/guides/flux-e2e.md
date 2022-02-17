@@ -88,17 +88,18 @@ A brief outline of the life cycle of a change as it's processed through Flux, ce
 2. The user can preview any changes to the cluster before or after making a commit with `flux diff kustomization`.
 3. Image Update Automation resources are a way for Flux to generate commits when there are updated images available.
 4. A git commit is represented internally as an "Artifact" in Flux, and it makes a footprint on the cluster through Source Controller.
-5. The "git push" event fires a webhook that Flux can receive, which triggers the `GitRepository` to reconcile (or the waiting period of the `GitRepository.spec.interval` passes, which similarly triggers the `GitRepository` to reconcile.
-6. The Source controller fetches the GitRepository data from the backing resource (Git, S3, ...).
-7. If an optional decryption configuration is provided with the Flux Kustomization, any encrypted secret manifests that are stored in the Kustomization's path are decrypted.
-7.5. The Kustomize Controller runs the go library equivalent of a `kustomize build` against the `Kustomization.spec.path` to recursively generate and render (or inflate) any Kustomize overlays. (All manifests are passed through Kustomize, even those that don't include a `kustomization.yaml`.)
-8. Kustomize build outputs are then validated against the cluster through a server-side dry-run, and if it succeeds the manifests are applied to the cluster with a server-side apply operation.
-9. `HelmRelease` resources applied to the cluster are picked up by Helm Controller, which reconciles them through the Helm client library.
-10. Before `HelmReleases` can be installed, Source controller fetches the release index via `HelmRepository` and generates a `HelmChart`.
-11. Alternatively, `GitRepository` sources can be used instead of `HelmRepository`. (Source controller still generates a `HelmChart`.)
-12. The resources being reconciled generates `Events` as they undergo successful or unsuccessful state transitions, and the Notification controller collects them through `Alerts` to forward them to `Providers`.
-13. Besides the "event stream" or channel-based providers, there are also `Providers` that map to Git hosting providers, so the success or failure of a `Kustomization` can be recorded on the commit through the "Checks API" or similar.
-14. An optional Health Assessment enabled through `Kustomization.spec.wait` can revert or prevent an update from being applied if some resources do not become ready before the `Kustomization.spec.timeout` expires.
+5. The Flux namespace is protected by a set of NetworkPolicy resources that prohibit noisy neighbors from reaching most Flux Services.
+6. The "git push" event fires a webhook that Flux can receive, which triggers the `GitRepository` to reconcile (or the waiting period of the `GitRepository.spec.interval` passes, which similarly triggers the `GitRepository` to reconcile.
+7. The Source controller fetches the GitRepository data from the backing resource (Git, S3, ...).
+8. If an optional decryption configuration is provided with the Flux Kustomization, any encrypted secret manifests that are stored in the Kustomization's path are decrypted.
+9. The Kustomize Controller runs the go library equivalent of a `kustomize build` against the `Kustomization.spec.path` to recursively generate and render (or inflate) any Kustomize overlays. (All manifests are passed through Kustomize, even those that don't include a `kustomization.yaml`.)
+10. Kustomize build outputs are then validated against the cluster through a server-side dry-run, and if it succeeds the manifests are applied to the cluster with a server-side apply operation.
+11. `HelmRelease` resources applied to the cluster are picked up by Helm Controller, which reconciles them through the Helm client library.
+12. Before `HelmReleases` can be installed, Source controller fetches the release index via `HelmRepository` and generates a `HelmChart`.
+13. Alternatively, `GitRepository` sources can be used instead of `HelmRepository`. (Source controller still generates a `HelmChart`.)
+14. The resources being reconciled generates `Events` as they undergo successful or unsuccessful state transitions, and the Notification controller collects them through `Alerts` to forward them to `Providers`.
+15. Besides the "event stream" or channel-based providers, there are also `Providers` that map to Git hosting providers, so the success or failure of a `Kustomization` can be recorded on the commit through the "Checks API" or similar.
+16. An optional Health Assessment enabled through `Kustomization.spec.wait` can revert or prevent an update from being applied if some resources do not become ready before the `Kustomization.spec.timeout` expires.
 
 ### 1. `flux create ...`
 
@@ -136,7 +137,7 @@ When the cluster reconciles a Source resource (like `GitRepository` or `Bucket`)
 
 When pushed, the receipt of a new commit activates the Git host to fire a webhook to notify subscribers about a `push` event, which Flux can consume via its `Receiver` API.
 
-### 4.5 `NetworkPolicy` and the `flux-system` namespace
+### 5. `NetworkPolicy` and the `flux-system` namespace
 
 Arbitrary clients cannot connect to any service in the `flux-system` namespace, as a precaution to limit the potential for new features to create and expose attack surfaces within the cluster. A set of default network policies restricts communication in and out of the `flux-system` namespace according to three rules:
 
@@ -146,7 +147,7 @@ Arbitrary clients cannot connect to any service in the `flux-system` namespace, 
 
 3. `allow-egress` permits agents in the `flux-system` namespace to send traffic outside of the namespace, (for the purpose of reaching any remote `GitRepository`, `HelmRepository`, `ImageRepository`, or `Provider`), and denies ingress for any traffic from pods or other clients outside of `flux-system` to prevent any traffic directed into the namespace.
 
-### 5. `git push` - Webhook Receivers
+### 6. `git push` - Webhook Receivers
 
 When activated by an event from a `Receiver`, Flux's Notification controller activates `GitRepository` or other Flux "sources" ahead of schedule, without first waiting for a `spec.interval` to elapse.
 
@@ -162,7 +163,7 @@ The period of waiting for the reconciliation interval can be increased or reduce
 
 One of the measures generally considered important is how long it takes for developers to get feedback from CI/CD systems. It's commonly put forth that "the CI feedback loop should not take longer than 10 minutes." It should be clear from those relevant materials that for tasks we do many times every day, seconds add up to minutes quickly. For this reason it is recommended to use Receivers wherever possible, or at least whenever shortening the feedback loop is to be considered as an important goal.
 
-### 6. `GitRepository` Source (Artifacts and Revisions)
+### 7. `GitRepository` Source (Artifacts and Revisions)
 
 A `GitRepository` is a Custom Resource that saves a read-only view of the latest revision of a Git repository and hosts it as a service in the cluster.
 
@@ -190,7 +191,7 @@ Features include:
 * Make the artifacts available in-cluster to interested 3rd parties (such as the Kustomize Controller and Helm Controller)
 * Notify interested 3rd parties of source changes and availability (status conditions, events, hooks)
 
-### 7. Kustomize Controller (Secret Decryption via SOPS)
+### 8. Kustomize Controller (Secret Decryption via SOPS)
 
 The [Kustomize Controller will decrypt Secret values encrypted using Mozilla's SOPS CLI][Mozilla SOPS Guide]
 with OpenPGP, AWS KMS, GCP KMS or Azure Key Vault and stored in the source Git repository as Kubernetes Secret manifests.
@@ -203,7 +204,7 @@ Note, it's a good idea to also back up your secret values in a password manager 
 
 The decrypted manifests are kept in memory and passed on to the next stage.
 
-### 7.5 Kustomize Controller (Build)
+### 9. Kustomize Controller (Build)
 
 Before it applies YAML or JSON resurce declarations to the Kubernetes API for its cluster, the Kustomize Controller
 reads the artifact files from its source path and builds them using the Kustomize Go library's `build` call. This call
@@ -213,7 +214,7 @@ that refer to or use them.
 
 * FAQ: [How does Flux run `kustomize build` internally?][Kustomize Build Flags] (Replicate Kustomize behavior locally with the Kustomize CLI)
 
-### 8. Kustomize Controller (Server Side Apply)
+### 10. Kustomize Controller (Server Side Apply)
 
 **Needs a link to FluxCD documentation for Server-Side Apply process!** _The only current on-point reference is the [Server-side reconciliation is coming](https://fluxcd.io/blog/2021/09/server-side-reconciliation-is-coming/) blog post.  This would likely be considered a gap in FluxCD project docs._
 
@@ -237,19 +238,18 @@ custom resource or namespace-scoped resources to that they will be available in 
 
 <insert sequence diagram>?
 
-### 9. Helm Controller (`HelmRelease` Custom Resource)
-(Adjacent concept to Kustomize apply)
+### 11. Helm Controller (`HelmRelease` Custom Resource)
 
 A [HelmRelease][HelmRelease API] is a composition of a chart, the chart values (parameters to the chart), and any inputs like secrets or config maps that are used to compose the values. Declaring a HelmRelease will cause the Helm Controller to perform an install using the Helm client libraries. Any changes made to the HelmRelease will trigger the Helm Controller to perform an upgrade to actuate those changes. You can find more information about HelmReleases [here][HelmRelease Guide] and more general info about Helm for Flux users [here][Helm Use Case].
 
 
-### 10. HelmRepository and HelmChart (Sources for Helm)
+### 12. HelmRepository and HelmChart (Sources for Helm)
 
 A Helm Repository is the native and preferred source for Helm. The Helm Controller works in tandem with the Source Controller to provide a [HelmRepository API][] that collects the correct release version from the helm repo and republishes its data as a [HelmChart][HelmChart API] artifact (another .tar.gz).
 
 The helm repo itself is represented internally in the Source Controller as a YAML index of all releases, including any charts in the repository.
 
-### 11. GitRepository and HelmChart (Alternative Sources for Helm)
+### 13. GitRepository and HelmChart (Alternative Sources for Helm)
 
 GR can be used as a source for Helm Release. The Git repo is not a native storage format for helm and there are some idiosyncrasies when you’re using Helm Controller with a Git repository source. You can use a GitRepository as a source, but best practice is to limit it to 1:1 (don’t do mono repo) - bad idea to create a repo with 400 helm charts. The problem is that git repo sources are tgz files end up with lots of artifacts pulled each time (overloading). Orange juice analogy here?
 
@@ -263,7 +263,7 @@ Links/resources:
 
 TODO: this all belongs in one of the Helm guides
 
-### 12. Notifications Part 1 - Notification Providers
+### 14. Notifications Part 1 - Notification Providers
 
 Notification Providers are used by Flux for [outbound notifications][Setup Notifications] to platforms like Slack, Microsoft
 Teams, Discord and others.  The Notification Provider manifest must contain an identifier to connect to the receiver platforms,
@@ -278,7 +278,7 @@ Provider specified on `spec.providerRef`.
 To avoid duplicated alerts [`Events`][Event API] are rate limited based on the `InvolvedObject.Name`, `InvolvedObject.Namespace`,
 `InvolvedObject.Kind`, `Message`, and `Metadata.revision`. The interval of the rate limit is set by default to 5m but it's configurable.
 
-### 13. Notifications Part 2 - Git Commit Status Providers
+### 15. Notifications Part 2 - Git Commit Status Providers
 
 Git Commit Status Providers work similarly to other notification providers however they target a specific commit with their event.
 If you [set up git commit status notications][Setup Git Commit Status Notications] through an integration for GitHub, GitLab,
@@ -289,15 +289,13 @@ commit hash present in the metadata.
 The provider will continuously receive events as they happen, and multiple events may be received for the same commit hash. The git
 providers are configured to update the status only if it has changed. This avoids repeatedly spamming the commit status history.
 
-### 14. Kustomize Controller (Health Checks and Wait)
+### 16. Kustomize Controller (Health Checks and Wait)
 
 Kustomize Controller can be configured with or without spec.wait which decides whether the Kustomization will be considered ready
 as soon as the resources are applied, or if the Kustomization will not be considered ready until the resources it created are all
 marked as ready.
 
 The health checking feature is called [Health Assessment][] in the Flux Kustomization API.
-
-### 15. ...
 
 [GitOps toolkit]: https://fluxcd.io/docs/components/
 [Security]: https://fluxcd.io/docs/security/
