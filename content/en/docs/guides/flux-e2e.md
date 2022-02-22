@@ -5,15 +5,15 @@ description: "A narrative of the life of a commit as it relates to Flux componen
 weight: 75
 ---
 
-Below we describe the life of a commit as it is seen from all angles by a Flux user.
+Below we describe the flow of data through Flux, from End to End.
 
-Assuming a standard Flux installation, with all optional features enabled, we then explain how Flux users can expect their changes to flow through the system as a commit, and describe how the data passes through the system and the cluster, in rough chronological order. We cover every supported opportunity that users have to inspect and interact with their changes through Flux, with a focus on the commit, and special attention to show the role of each component of the [GitOps toolkit][].
+We assume a standard Flux installation, with all optional features enabled, then explain how Flux users can expect their changes to flow through the stages of its life as a commit, and describe how the commit data passes through the Flux system and the cluster, in rough chronological order. We tried to cover every supported opportunity that users have to inspect and interact with their changes through Flux, with a goal of showing the cohesive behavior of each component of the [GitOps toolkit][] together in a single document.
 
-It should be clear from reading this document when any Flux component interacts with the cluster resources or APIs, or any commit or registry data. This document narrates through those interactions so that there can be an end-to-end analysis of how Flux works that includes mention of any authentication or security hardening procedures that are in play for Flux at runtime.
+It should be clear from reading this document when any Flux component interacts with the cluster resources or APIs, or any commit or registry data. This document narrates through those interactions so that there can be an end-to-end analysis of how Flux works that includes mention of any authentication or security hardening procedures that are in play for Flux at runtime. One specific goal of this document is to provide an anchor and a starting point for security auditors.
 
-Security and hardening procedures that the Flux development team may be taking to guarantee Flux release-engineering standards for testing, runtime safety, and release quality are considered outside of the scope of this document.
+Security and hardening procedures that the Flux development team may be taking to guarantee Flux release-engineering standards for testing, runtime safety, and release quality are considered outside of the scope of this document, although they can be mentioned, the operational details should have their own documentation supporting them, and we can link out to those documents as references wherever possible to make this document evergreen and easy to maintain.
 
-See one of: [Security][], [Contributing: Acceptance Policy][] for more information about those standards and practices. An exhaustive description of the precautions with regard to sensitive and/or secret data and flow of information related to sensitive access, is out of the scope of this document.
+See one of: [Security][], [Contributing: Acceptance Policy][] for more information about the standards and practices in general around those topics. An exhaustive description of the precautions with regard to sensitive and/or secret data and flow of information related to sensitive access, is out of the scope of this document.
 
 ## Terminology
 
@@ -29,7 +29,6 @@ Flux uses the following terms throughout the codebase and documentation:
 * **API** - In Kubernetes, an API consists of (usually) a CRD, a control loop, and optionally one or more admission or mutation hooks. Flux's APIs are also known, collectively, as the GitOps Toolkit.
 * **Agent** - A process which runs in the cluster and does some work on behalf of users. Flux's controllers are "software agents" that implement a control loop.
 * **Service** - When Kubernetes `Deployments` spawn workloads, they are placed in ephemeral `Pods` which usually are not directly addressable. `Services` are used to connect these `Endpoints` to a stable address that can usually be discovered through a DNS lookup in the cluster.
-
 
 ## Microservice architecture
 
