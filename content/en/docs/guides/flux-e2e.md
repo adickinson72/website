@@ -82,7 +82,7 @@ Describe at an operational level, without connecting to specific Flux controller
 
 ### Overview
 
-A brief outline of the life cycle of a change as it's processed through Flux, centered around a git commit:
+A brief outline of the life cycle of a change as it's processed through Flux, centered around a Git commit:
 
 1. Flux resources are generated interactively through `flux create ...`.
 2. The user can preview any changes to the cluster before or after making a commit with `flux diff kustomization`.
@@ -127,7 +127,7 @@ TODO: add mention of `flux build`
 
 ### 3. `ImageRepository` and `ImageUpdateAutomation` with `ImagePolicy`
 
-Flux can create git commits to apply updates to the cluster, that are applied in the standard GitOps way to the cluster (as a git commit), written by a Flux agent called Image Automation Controller. It works through these resources with the help of the Image Reflector Controller to determine when updates are available and apply them to the cluster.
+Flux can create Git commits to apply updates to the cluster, that are applied in the standard GitOps way to the cluster (as a Git commit), written by a Flux agent called Image Automation Controller. It works through these resources with the help of the Image Reflector Controller to determine when updates are available and apply them to the cluster.
 
 ### 4. `git commit`
 
@@ -253,7 +253,7 @@ The helm repo itself is represented internally in the Source Controller as a YAM
 
 ### 13. GitRepository and HelmChart (Alternative Sources for Helm)
 
-GR can be used as a source for Helm Release. The Git repo is not a native storage format for helm and there are some idiosyncrasies when you’re using Helm Controller with a Git repository source. You can use a GitRepository as a source, but best practice is to limit it to 1:1 (don’t do mono repo) - bad idea to create a repo with 400 helm charts. The problem is that git repo sources are tgz files end up with lots of artifacts pulled each time (overloading). Orange juice analogy here?
+A `GitRepository` can be used as a source for Helm Release. The Git repo is not a native storage format for helm and there are some idiosyncrasies when you’re using Helm Controller with a Git repository source. You can use a GitRepository as a source, but best practice is to limit it to 1:1 (don’t do mono repo) - bad idea to create a repo with 400 helm charts. The problem is that Git repo sources are tgz files end up with lots of artifacts pulled each time (overloading). Orange juice analogy here?
 
 So you have lots of tools at your disposal for making sources narrowly scoped, and if you will use them all, you can avoid any potential issues stemming from Helm Controller accidentally pulling in resources and causing source controller to repackage them again, when you did not need to include them in the chart.
 
@@ -283,12 +283,12 @@ To avoid duplicated alerts [`Events`][Event API] are rate limited based on the `
 ### 15. Notifications Part 2 - Git Commit Status Providers
 
 Git Commit Status Providers work similarly to other notification providers however they target a specific commit with their event.
-If you [set up git commit status notications][Setup Git Commit Status Notications] through an integration for GitHub, GitLab,
-Bitbucket (or any supported git providers) Flux will display success or failure reported on each commit from any alerts targeting
+If you [set up Git commit status notications][Setup Git Commit Status Notications] through an integration for GitHub, GitLab,
+Bitbucket (or any supported Git providers) Flux will display success or failure reported on each commit from any alerts targeting
 the provider. This feature is restricted to `Kustomization` as an event source since the Git Commit Status Providers require a
 commit hash present in the metadata.
 
-The provider will continuously receive events as they happen, and multiple events may be received for the same commit hash. The git
+The provider will continuously receive events as they happen, and multiple events may be received for the same commit hash. The Git
 providers are configured to update the status only if it has changed. This avoids repeatedly spamming the commit status history.
 
 ### 16. Kustomize Controller (Health Checks and Wait)
