@@ -132,7 +132,7 @@ Flux's OpenAPI specification can also be integrated with editors to assist Flux 
 
 For more information, see: [`flux create`](https://fluxcd.io/docs/cmd/flux_create/).
 
-TODO: (there is no information about the OpenAPI spec at the link above, provide an additional link to editor integration docs.)
+* TODO: [fluxcd/website#801](https://github.com/fluxcd/website/issues/801) There is no information about utilizing the OpenAPI spec with your editor in our docs, (issue suggests we should have a specific "editor integrations" docs page.)
 
 ### Previewing changes
 
@@ -166,7 +166,7 @@ Arbitrary clients cannot connect to any service in the `flux-system` namespace, 
 
 3. `allow-egress` permits agents in the `flux-system` namespace to send traffic outside of the namespace, (for the purpose of reaching any remote `GitRepository`, `HelmRepository`, `ImageRepository`, or `Provider`), and denies ingress for any traffic from pods or other clients outside of `flux-system` to prevent any traffic directed into the namespace.
 
-TODO: in [fluxcd/website#800](https://github.com/fluxcd/website/issues/800), we consider that this information should live somewhere permanent and not only in the E2E guide, perhaps in the Install doc.
+* TODO: [fluxcd/website#800](https://github.com/fluxcd/website/issues/800), in this issue we consider that this information should live somewhere permanent and not only in the E2E guide, perhaps in the Install doc.
 
 ### Trigger Reconciling on Git push with Webhook Receivers
 
@@ -318,7 +318,7 @@ Whatever it says it just needs to get the message across that the Source is real
 
 It's probably important to get across also that whatever winds up in the Helm Chart .tgz will actually be loaded into memory by Helm, and it has no way to know which files are not important. So while you can get away with reusing one GitRepository up to a point, you really need to know for sure that what goes into the HelmChart is not littered with unnecessary files more than what's needed.
 
-TODO: [fluxcd/website#614](https://github.com/fluxcd/website/issues/614) mention `Revision` setting of `reconcileStrategy`, which is also important information for using Git source. (We should relocate all of this information to one of the existing Helm guides.)
+* TODO: [fluxcd/website#614](https://github.com/fluxcd/website/issues/614) mention `Revision` setting of `reconcileStrategy`, which is also important information for using Git source. (We should relocate all of this information to one of the existing Helm guides.)
 
 ### Channel-based Providers for Notifications
 
