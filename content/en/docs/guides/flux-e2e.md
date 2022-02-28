@@ -166,7 +166,7 @@ Arbitrary clients cannot connect to any service in the `flux-system` namespace, 
 
 3. `allow-egress` permits agents in the `flux-system` namespace to send traffic outside of the namespace, (for the purpose of reaching any remote `GitRepository`, `HelmRepository`, `ImageRepository`, or `Provider`), and denies ingress for any traffic from pods or other clients outside of `flux-system` to prevent any traffic directed into the namespace.
 
-TODO: Add a reference to the install docs, (where this information should live permanently.)
+TODO: in [fluxcd/website#800](https://github.com/fluxcd/website/issues/800), we consider that this information should live somewhere permanent and not only in the E2E guide, perhaps in the Install doc.
 
 ### Trigger Reconciling on Git push with Webhook Receivers
 
@@ -282,17 +282,43 @@ The helm repo itself is represented internally in the Source Controller as a YAM
 
 The `GitRepository` and `Bucket` sources are also valid for use with Helm Controller.
 
-A `GitRepository` can be used as a source for Helm Release. The Git repo is not a native storage format for helm and there are some idiosyncrasies when you’re using Helm Controller with a Git repository source. You can use a GitRepository as a source, but best practice is to limit it to 1:1 (don’t do mono repo) - bad idea to create a repo with 400 helm charts. The problem is that Git repo sources are tgz files end up with lots of artifacts pulled each time (overloading). Orange juice analogy here?
+A `GitRepository` can be used as a source for Helm Release. The Git repo is not a native storage format for helm and there are some idiosyncrasies when you’re using Helm Controller with a Git repository source. While one can use a GitRepository as a source for HelmRelease, a best practice is to not package many HelmReleases through the same `GitRepository`, but instead limit it to one chart per `GitRepository`.
 
-So you have lots of tools at your disposal for making sources narrowly scoped, and if you will use them all, you can avoid any potential issues stemming from Helm Controller accidentally pulling in resources and causing source controller to repackage them again, when you did not need to include them in the chart.
+It is a bad idea to create a `GitRepository` with 400 helm charts. Why exactly? The problem is that Git repo sources are simple `.tgz` files under the hood, and since it's not possible to partially fetch such an artifact, this configuration will end up with lots of oversized artifacts that are all pulled each time any of them changes.
+
+Using an analogy, if Flux is a juicemaker and Helm Controller is the business end where you put raw fruit in order to make juice, this is like trying to put the entire bag of oranges into the machine without even opening it up first. While this might work, a clearly better option is to remove the fruits from the bag, feed them in one at a time, and (to stretch the analogy) peel and cut the fruit?
+
+In the analogy, the fruits are the charts and the GitRepository is the bag – clearly it doesn't make logical sense to do things like this.
+
+Flux provides tools that you have at your disposal for making sources narrowly scoped, here's one example:
+
+```
+apiVersion: source.toolkit.fluxcd.io/v1beta1
+kind: GitRepository
+metadata:
+  name: my-chart-git-repo
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://github.com/example/chartsrepo
+  ref:
+    branch: main
+  ignore: |
+    # exclude all
+    /*
+    # include singular charts directory
+    !/deploy/charts/my-chart/
+```
+
+In the example above, we have a monorepo with many charts in the `deploy` directory.
+
+This way you can avoid any potential issues stemming from Helm Controller accidentally pulling in too many resources and causing source controller to repackage them again, when you did not need to include them in the chart.
 
 Whatever it says it just needs to get the message across that the Source is really a .tgz at any point in time, which can't be partially downloaded, and the Helm Chart is also a .tgz, so if you want this to perform well, you need to keep irrelevant things out of both TGZ files (and this unfortunately means you will have a lot more GitRepository resources than you wanted, at least for now. Not sure how this can be improved without drastic architectural changes that seem unlikely.)
 
 It's probably important to get across also that whatever winds up in the Helm Chart .tgz will actually be loaded into memory by Helm, and it has no way to know which files are not important. So while you can get away with reusing one GitRepository up to a point, you really need to know for sure that what goes into the HelmChart is not littered with unnecessary files more than what's needed.
 
-Links/resources:
-
-TODO: this all belongs in one of the Helm guides
+TODO: [fluxcd/website#614](https://github.com/fluxcd/website/issues/614) mention `Revision` setting of `reconcileStrategy`, which is also important information for using Git source. (We should relocate all of this information to one of the existing Helm guides.)
 
 ### Channel-based Providers for Notifications
 
